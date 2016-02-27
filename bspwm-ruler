@@ -1,0 +1,153 @@
+#!/bin/bash
+
+RED='\e[41m'
+BLUE='\e[44m'
+ORANGE='\e[46m'
+NC='\e[0m'
+
+rule_ops()
+{
+	touch /tmp/rule_ops
+	echo -e "state=$(echo -e "tiling\npseudo-tiling\nfloating\nfullscreen" | fzf-tmux -e --reverse --prompt='Select state for chosen window class >')" >> /tmp/rule_ops
+		cat /tmp/rule_ops | xargs
+			read
+		window_manage=$(echo -e "on\noff" | fzf-tmux -e --reverse --prompt='manage= >')
+		echo -e "manage=$window_manage" >> /tmp/rule_ops
+		cat /tmp/rule_ops | xargs
+			read
+		window_layer=$(echo -e "below\nnormal\nabove" | fzf-tmux -e --reverse --prompt='layer= >')
+		echo -e "layer=$window_layer" >> /tmp/rule_ops
+		cat /tmp/rule_ops | xargs
+			read
+		window_flags=$(echo -e "sticky=on\nprivate=on\nlocked=on\nurgent=on\n' '" | fzf-tmux -e -m --reverse --prompt='Choose window flags (tab to select multiple) >')
+		echo -e "$window_flags" >> /tmp/rule_ops
+		cat /tmp/rule_ops | xargs
+			read
+}
+add_rule()
+{
+	echo -e "Click on the window you wish to rule..."
+	class=$(xprop | awk '/WM_CLASS/ {print substr($4, 1, length($4)-1)}' | awk NR==1 | cut -c 2-)
+	echo ""
+	echo -e "You have chosen $class."
+	rule_ops
+	rule_command="bspc rule -a $class $(cat /tmp/rule_ops | xargs)"
+	$rule_command
+	echo "your rule is $rule_command. Would you like to make this rule permanent? (y/N)"
+	read -s -n1 yesno
+	case yesno in
+	y|Y)
+		echo -e "$rule_command" >> $HOME/.config/bspwm/bspwmrc
+		;;
+	*)
+		echo ""
+		echo -e "Okay. Press Return to continue"
+		read
+		;;
+	esac
+	rm /tmp/rule_ops
+}
+disable_rule()
+{
+		for rule in $(bspc rule -l | fzf-tmux -e -m  --reverse --prompt='Select rules to disable (use TAB to toggle selection) >' | awk '{print substr($1, 1, length($1)-2)}'); do
+		bspc rule -r $rule
+	done
+}
+
+rm_rule()
+{
+		for rule in $(bspc rule -l | fzf-tmux -e -m  --reverse --prompt='Select rules to remove (use TAB to toggle selection) >' | awk '{print substr($1, 1, length($1)-2)}'); do
+		 	sed -i "/rule -a $rule/d" $HOME/.config/bspwm/bspwmrc
+		 	sed -i "/rule --add $rule/d" $HOME/.config/bspwm/bspwmrc
+	done
+}
+
+bspwm_cfg()
+{
+	for cfg in borderless_monocle gapless_monocle paddingless_monocle single_monocle history_aware_focus focus_by_distance focus_follows_pointer pointer_follows_focus ignore_emwh_focus center_pseudo-tiled remove_disabled_monitors remove_unplugged_monitors merge_overlapping_monitors; do
+	echo "$cfg $(bspc config $cfg)" >> /tmp/bspwm-configs
+	done
+	toggles=$(cat /tmp/bspwm-configs | fzf-tmux -e -m  --reverse --prompt='Select configs to toggle (use TAB to toggle selection) >')
+	for tog in $toggles; do
+		toggle=$(bspc config $tog | \
+    awk -vtoggle="true" \
+    '{ if ($1 == "true") toggle="false"; print toggle }')
+
+bspc config $tog $toggle
+	done
+	rm /tmp/bspwm-configs
+}
+
+
+main()
+{
+    while true; do
+    clear
+    echo ""
+    echo -e "                     ::Bspwm settings:: "
+    echo -e " ┌─────────────────────────────────────────────────────────────┐"
+    echo -e " │    1   Add a rule                   2   Remove a rule       │"
+    echo -e " │    3   Configure settings           4   Disable a rule      │"
+    echo -e " │    5   Edit keydindings             6   Edit .profile       │"    
+    echo -e " │    7   Edit autostart               8   Edit bspwmrc        │"
+    echo -e " └─────────────────────────────────────────────────────────────┘"
+    echo -e "          Select an item       -       0   Exit "
+    echo ""
+    read -s -n1 choix
+    case $choix in
+        1)
+            echo
+            add_rule
+            echo ""
+            ;;
+        2)
+            echo
+            rm_rule
+            echo ""
+            ;;
+        3)
+            echo
+            bspwm_cfg
+            echo ""
+            ;;
+        4)
+            echo
+            disable_rule
+            echo ""
+            ;;
+        5)
+            echo
+            $EDITOR $HOME/.config/sxhkd/sxhkdrc
+            echo ""
+            ;;
+        6)
+            echo
+            $EDITOR $HOME/.profile
+            echo ""
+            ;;
+        7)
+            echo
+            $EDITOR $HOME/.config/bspwm/autostart
+            echo ""
+            ;;
+        8)
+            echo
+            $EDITOR $HOME/.config/bspwm/bspwmrc
+            echo ""
+            ;;
+        0)
+            clear && exit
+            read
+            ;;
+        *)
+            echo -e "$RED Wrong option $NC"
+            echo "Wait and try again later..."
+            echo ""
+            sleep 1
+            clear
+            ;;
+    esac
+    done
+}
+
+main
