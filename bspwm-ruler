@@ -7,22 +7,38 @@ NC='\e[0m'
 
 rule_ops()
 {
+# make a temporary file for options
 	touch /tmp/rule_ops
+	# choose window state
 	echo -e "state=$(echo -e "tiling\npseudo-tiling\nfloating\nfullscreen" | fzf-tmux -e --reverse --prompt='Select state for chosen window class >')" >> /tmp/rule_ops
 		cat /tmp/rule_ops | xargs
-			read
-		window_manage=$(echo -e "on\noff" | fzf-tmux -e --reverse --prompt='manage= >')
+			read -s -n1
+	# choose if window  should be managed
+		window_manage=$(echo -e "on\noff" | fzf-tmux -e --reverse --prompt='Manage= >')
 		echo -e "manage=$window_manage" >> /tmp/rule_ops
 		cat /tmp/rule_ops | xargs
-			read
-		window_layer=$(echo -e "below\nnormal\nabove" | fzf-tmux -e --reverse --prompt='layer= >')
+			read -s -n1
+	# choose window layer
+		window_layer=$(echo -e "below\nnormal\nabove" | fzf-tmux -e --reverse --prompt='Layer= >')
 		echo -e "layer=$window_layer" >> /tmp/rule_ops
 		cat /tmp/rule_ops | xargs
-			read
-		window_flags=$(echo -e "sticky=on\nprivate=on\nlocked=on\nurgent=on\n' '" | fzf-tmux -e -m --reverse --prompt='Choose window flags (tab to select multiple) >')
+			read -s -n1
+	# choose window flags
+		window_flags=$(echo -e "sticky=on\nprivate=on\nlocked=on\nurgent=on\n " | fzf-tmux -e -m --reverse --prompt='Choose window flags (tab to select multiple, choose empty if you want none) >')
 		echo -e "$window_flags" >> /tmp/rule_ops
 		cat /tmp/rule_ops | xargs
-			read
+			read -s -n1
+		window_desktop=$(echo -e "$(bspc query -D)\nAny" | fzf-tmux -e --reverse --prompt='Desktop= >')
+		echo "$window_desktop" | {
+		read desk
+		if [ "$desk" = 'Any' ] ; then
+			echo ""
+		else
+			echo -e "$desk" >> /tmp/rule_ops
+		fi
+	}
+		cat /tmp/rule_ops | xargs
+			read -s -n1
 }
 add_rule()
 {
