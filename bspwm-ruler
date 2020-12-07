@@ -42,7 +42,7 @@ rule_ops()
 add_rule()
 {
 	echo -e "Click on the window you wish to rule..."
-	class=$(xprop | awk '/WM_CLASS/ {print substr($4, 1, length($4)-1)}' | awk NR==1 | cut -c 2-)
+	class=$(xprop | awk '/WM_CLASS/ {print substr($4, 2, length($4)-2)}')
 	echo ""
 	echo -e "You have chosen $class."
 	read -s -n1
