@@ -26,13 +26,25 @@ rule_ops()
 		window_flags=$(echo -e "sticky=on\nprivate=on\nlocked=on\nurgent=on\n " | fzf-tmux -e -m --reverse --prompt='Choose window flags (tab to select multiple, choose empty if you want none) >')
 		[ -n "$window_flags" ] && echo -e "$window_flags" >> /tmp/rule_ops
 
-		window_desktop=$(echo -e "$(bspc query -D)\nAny" | fzf-tmux -e --reverse --prompt='Desktop= >')
+        for monitor_name in $(bspc query -M --names); do
+            for desktop_id in $(bspc query -D -m "$monitor_name"); do
+                index=$((index + 1))
+                line="${monitor_name}\t${index}\t${desktop_id}\n"
+                desktops="${desktops}${line}"
+            done
+            unset index
+        done
+
+		window_desktop=$(echo -e "${desktops}\nAny" | fzf-tmux -e --reverse --prompt='Desktop= >')
 		echo "$window_desktop" | {
 		read desk
 		if [ "$desk" = 'Any' ] ; then
 			echo ""
 		else
-			[ -n "$desk" ] && echo -e "desktop=$desk" >> /tmp/rule_ops
+            if [ -n "$desk" ]; then
+                desktop_id=$( cut -d$'\t' -f3 <<< "$desk")
+			    echo -e "desktop=${desktop_id}" >> /tmp/rule_ops
+            fi
 		fi
 	}
 	# choose if window should be followed if it spawns on another desktop
@@ -107,7 +119,7 @@ main()
     echo -e " ┌─────────────────────────────────────────────────────────────┐"
     echo -e " │    1   Add a rule                   2   Remove a rule       │"
     echo -e " │    3   Configure settings           4   Disable a rule      │"
-    echo -e " │    5   Edit keydindings             6   Edit .profile       │"    
+    echo -e " │    5   Edit keybindings             6   Edit .profile       │"
     echo -e " │    7   Edit autostart               8   Edit bspwmrc        │"
     echo -e " └─────────────────────────────────────────────────────────────┘"
     echo -e "          Select an item       -       0   Exit "
