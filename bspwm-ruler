@@ -109,7 +109,7 @@ main()
     echo -e " ┌─────────────────────────────────────────────────────────────┐"
     echo -e " │    1   Add a rule                   2   Remove a rule       │"
     echo -e " │    3   Configure settings           4   Disable a rule      │"
-    echo -e " │    5   Edit keydindings             6   Edit .profile       │"
+    echo -e " │    5   Edit keybindings             6   Edit .profile       │"
     echo -e " │    7   Edit autostart               8   Edit bspwmrc        │"
     echo -e " └─────────────────────────────────────────────────────────────┘"
     echo -e "          Select an item       -       0   Exit "
